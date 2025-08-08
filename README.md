@@ -9,25 +9,21 @@ Neste artigo, mostro como configurei um pipeline completo com GitHub Actions par
 
 ##  Objetivos
 - Criar workflow de CI/CD com GitHub Actions.
-
 - Automatizar o build da imagem Docker.
-
 - Publicar imagem no Docker Hub.
-
 - Aplicar o manifesto Kubernetes automaticamente após o push.
-
 - Garantir entregas rápidas, seguras e sem fricção.
 
 ---
 
-## ☸️ Arquitetura Kubernetes
+##  Arquitetura CI/CD
 
 
 
 ---
 
 
-## 📦 Estrutura do Projeto `devops-kubenews-cicd`
+## Estrutura do Projeto `devops-kubenews-cicd`
 
 ```plaintext
 devops-kubenews-cicd/
@@ -116,9 +112,7 @@ CMD ["npm", "start"]
 Ao realizar um git push na branch main, o GitHub Actions irá:
 
 1. Fazer build da imagem Docker.
-
 2. Publicar no Docker Hub.
-
 3. Aplicar os arquivos YAML no cluster Kubernetes.
 
 Tudo isso de forma automática, garantindo uma pipeline robusta e eficiente.
@@ -126,10 +120,8 @@ Tudo isso de forma automática, garantindo uma pipeline robusta e eficiente.
 
 ## Dicas e Testes
 - Faça um teste deletando o pod e veja o Kubernetes recriando com a nova imagem.
-
 - Use kubectl describe para ver o histórico dos eventos.
-
 - Combine com kubectl rollout restart deployment kube-news-deployment para atualizar sempre que desejar.
 
-## ✍️ Autor
+##  Autor
 - https://www.linkedin.com/in/ronayrton-rocha-13a872a8/
