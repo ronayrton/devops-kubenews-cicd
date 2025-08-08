@@ -1,214 +1,135 @@
-# ☸️ KubeNews com Kubernetes – Maratona DevOps + IA
+# 🚀 Automatizando o Deploy da KubeNews com GitHub Actions
 
-Este repositório contém o **Lab do Dia 2** da Maratona DevOps + IA com [Fabricio Veronez](https://www.linkedin.com/in/fabriciovenorez/), onde aplicamos na prática o uso de **Kubernetes** para orquestrar a aplicação KubeNews, promovendo escalabilidade, resiliência e automação declarativa.
+Na continuação da Maratona DevOps + IA com Fabricio Veronez, o Dia 3 trouxe um dos temas mais importantes no mundo DevOps: Integração Contínua e Entrega Contínua (CI/CD).
+
+Neste artigo, mostro como configurei um pipeline completo com GitHub Actions para a aplicação KubeNews, realizando build da imagem, push para o Docker Hub e deploy automático no Kubernetes.
 
 
 ---
 
-## 📌 Objetivos
+##  Objetivos
+- Criar workflow de CI/CD com GitHub Actions.
 
-- Criar e configurar um cluster Kubernetes local e na nuvem.
-- Implantar uma aplicação em containers com escalabilidade e resiliência.
-- Utilizar `kubectl` para gerenciar objetos do cluster.
-- Entender a arquitetura do Kubernetes.
-- Testar serviços do tipo LoadBalancer.
-- Simular cenários de falha e recuperação automática (resiliência).
-- Utilizar o Ask Gordon para análises do cluster.
+- Automatizar o build da imagem Docker.
+
+- Publicar imagem no Docker Hub.
+
+- Aplicar o manifesto Kubernetes automaticamente após o push.
+
+- Garantir entregas rápidas, seguras e sem fricção.
 
 ---
 
 ## ☸️ Arquitetura Kubernetes
 
-### 🔹 Cluster (Conjunto de máquinas)
-- **Control Plane**
-  - API Server
-  - etcd
-  - Scheduler
-  - Controller Manager
-- **Worker Node**
-  - Kubelet
-  - Kube-Proxy
-  - Container Runtime (ContainerD, CRI-O)
 
----
-
-## 🛠️ Tecnologias Utilizadas
-
-- Kubernetes (kubectl)
-- Digital Ocean (Kubernetes as a Service)
-- Minikube / Kind (para testes locais)
-- Chocolatey (Instalação no Windows)
-- Visual Studio Code
-
----
-
-## 🧱 Componentes criados
-
-| Objeto Kubernetes | Descrição |
-|-------------------|-----------|
-| **Namespace**     | Isolamento lógico dos recursos da aplicação |
-| **Deployment**    | Gerencia os pods e réplicas da aplicação |
-| **ReplicaSet**    | Garante que o número desejado de pods esteja sempre em execução |
-| **Pod**           | Unidade mínima de execução, onde o container roda |
-| **Service**       | Expõe os pods para acesso externo via LoadBalancer |
 
 ---
 
 
-## 📦 Estrutura do Projeto `devops-kubenews-k8s`
+## 📦 Estrutura do Projeto `devops-kubenews-cicd`
 
 ```plaintext
-devops-kubenews-k8s/
+devops-kubenews-cicd/
 │
-├── k8s/                         # Arquivos de definição Kubernetes (YAML)
-│   └── deployment.yaml
-│   
+├── .github/
+│   └── workflows/
+│       └── cicd.yaml              # Workflow GitHub Actions
 │
-├── src/                         # Código-fonte da aplicação
-│   └── [aplicação Node.js]
+├── k8s/                           # Manifests Kubernetes
 │
-├── Dockerfile                   # Criação da imagem container
-├── .dockerignore                # Exclusões do contexto de build
-├── README.md                    # Documentação detalhada
-└── docs/                        # Prints, apresentações, evidências
-    ├── apresentacao.pdf
-    └── imagens/
-        ├── dashboard-cluster.png
-        ├── kubectl-get-all.png
-        └── service-exposed.png
+├── Dockerfile                     # Build da imagem
+├── README.md                      # Documentação CI/CD
 ```
 ---
 
-## ⚙️ Instalação do Kubectl no Windows
+##  Configurando o GitHub Actions
+Crie um arquivo em:
+.github/workflows/cicd.yaml
 
-```bash
-choco install kubernetes-cli
-kubectl version --client
-```
-## Inicializando um cluster local com Minikube
-```bash
-minikube start --kubernetes-version=v1.29.0 --driver=docker --memory=4096 --cpus=2
-```
-Se der erro:
-```bash
-minikube stop
-minikube delete --all --purge
-```
+```yaml
+name: CI/CD KubeNews
 
-## 🚀 Deploy da Aplicação
-```bash
-kubectl apply -f deployment.yaml
-kubectl get all
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v3
+
+    - name: Login no Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build da imagem Docker
+      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/kubenews:latest .
+
+    - name: Push da imagem
+      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/kubenews:latest
+
+    - name: Configurar kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+
+    - name: Aplicar manifesto no cluster
+      env:
+        KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      run: |
+        echo "$KUBECONFIG" > kubeconfig
+        export KUBECONFIG=$PWD/kubeconfig
+        kubectl apply -f k8s/deployment.yaml
+        kubectl apply -f k8s/service.yaml
 ```
 -
 
-## ☁️ Cluster na Digital Ocean
-- Criado cluster com:
-  2 vCPU | 2 GB RAM
+## Secrets necessários no GitHub
+Configure os seguintes segredos (Secrets) no repositório GitHub:
 
-- Obter crédito de $200: Link de Indicação
-
-## 🔐 Configuração do Kubectl
-1. Baixar o arquivo de configuração do cluster da Digital Ocean.
-
-2. Copiar o conteúdo para:
-
-  - Linux/macOS: ~/.kube/config
-
-  - Windows: C:\Users\seu_usuario\.kube\config
+| Nome                 | Descrição                                       |
+| -------------------- | ----------------------------------------------- |
+| `DOCKERHUB_USERNAME` | Seu nome de usuário no Docker Hub               |
+| `DOCKERHUB_TOKEN`    | Token de acesso gerado no Docker Hub            |
+| `KUBECONFIG`         | Conteúdo do arquivo `~/.kube/config` do cluster |
 
 
-## 🚀 Deploy da Aplicação
-```bash
-kubectl apply -f deployment.yaml
-kubectl get all
+## Dockerfile da aplicação
+Certifique-se de ter um Dockerfile na raiz do projeto:
+
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY . .
+RUN npm install
+EXPOSE 8080
+CMD ["npm", "start"]
 ```
 
-## 🧱 Manifesto deployment.yaml
-```yaml
+## Resultado Final
+Ao realizar um git push na branch main, o GitHub Actions irá:
 
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: kube-news-deployment
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: kube-news-app
-  template:
-    metadata:
-      labels:
-        app: kube-news-app
-    spec:
-      containers:
-      - name: kube-news
-        image: <sua-imagem>
-        ports:
-        - containerPort: 8080
-```
+1. Fazer build da imagem Docker.
+
+2. Publicar no Docker Hub.
+
+3. Aplicar os arquivos YAML no cluster Kubernetes.
+
+Tudo isso de forma automática, garantindo uma pipeline robusta e eficiente.
 
 
-## 🌐 Criando o Service
-Expondo via LoadBalancer
-```yaml
+## Dicas e Testes
+- Faça um teste deletando o pod e veja o Kubernetes recriando com a nova imagem.
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: kube-news-service
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-    targetPort: 8080
-  selector:
-    app: kube-news-app
-```
+- Use kubectl describe para ver o histórico dos eventos.
 
-## 📈 Escalabilidade e Resiliência
-- Escalabilidade
-Aumentar número de réplicas:
-
-```yaml
-spec:
-  replicas: 10
-```
-
-- Resiliência
-Simular falha:
-
-```bash
-kubectl delete pod <nome-do-pod>
-```
-O pod será recriado automaticamente.
-
-## 🧪 Rollback de Deploy
-```bash
-kubectl rollout history deployment kube-news-deployment
-kubectl rollout undo deployment kube-news-deployment
-```
-
-## 🧹 Cleanup
-```bash
-kubectl delete -f deployment.yaml
-kubectl delete -f service.yaml
-```
-
-## 🧪 Labs Extras (Planejados)
-- Deploy com imagem: fabricioverones/web-color
-
-- Integração com banco de dados PostgreSQL externo
-
-- Uso de PersistentVolumes (PV/PVC)
-
-## 📊 Análise do Cluster
-- Usar Ask Gordon para analisar a segurança e performance do cluster Kubernetes.
-
-## 📚 Recursos Úteis
-- kubectl api-resources
-
-- Documentação Oficial Kubernetes
+- Combine com kubectl rollout restart deployment kube-news-deployment para atualizar sempre que desejar.
 
 ## ✍️ Autor
 - https://www.linkedin.com/in/ronayrton-rocha-13a872a8/
