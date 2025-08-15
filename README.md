@@ -1,4 +1,4 @@
-# 🚀 Automatizando o Deploy da KubeNews com GitHub Actions
+#  Automatizando o Deploy da KubeNews com GitHub Actions
 
 Na continuação da Maratona DevOps + IA com Fabricio Veronez, o Dia 3 trouxe um dos temas mais importantes no mundo DevOps: Integração Contínua e Entrega Contínua (CI/CD).
 
